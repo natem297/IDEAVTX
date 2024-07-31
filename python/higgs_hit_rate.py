@@ -44,7 +44,15 @@ def phi(x,y):
         phi += 2*math.pi
     return phi
 
-hit_map = {r: {z: {azimuthal: [0]*1000 for azimuthal in range(0, 360, 3)} for z in range(-110, 110, 2)} for r in radii}
+def theta(x,y,z):
+    """
+    Calculates theta of particle.
+    Inputs: x,y,z floats.
+    Output: theta, float representing angle in radians from 0 to pi.
+    """
+    return math.acos(z/np.sqrt(x**2 + y**2 + z**2))
+
+hit_map = {r: {cos: {azimuthal: [0]*1000 for azimuthal in range(0, 360, 3)} for cos in range(-100, 100, 2)} for r in radii}
 for i in range(1000):
 
     hits = {coord: [] for coord in radii}
@@ -64,22 +72,24 @@ for i in range(1000):
             y = event_y[index]
             z = event_z[index]
             azimuthal = phi(x, y) * (180 / math.pi)
-            hit_map[r][int((z // 2) * 2)][int((azimuthal // 3) * 3)][i] += 1
+            polar = theta(x, y, z)
+            cos = 100 * math.cos(polar)
+            hit_map[r][int((cos // 2) * 2)][int((azimuthal // 3) * 3)][i] += 1
 
-# for layer_index in range(3):
+for layer_index in range(3):
 
-#     r = radii[layer_index]
-#     hist = ROOT.TH2F("hit map", f"Guinea Pig Layer {layer_index + 1} Module Hits", \
-#                     110, -110, 110, 120, 0, 360)
-#     hist.SetTitle(f"Layer {layer_index + 1} Hits per Bunch Crossing;z (mm);Azimuthal Angle (deg)")
+    r = radii[layer_index]
+    hist = ROOT.TH2F("hit map", f"Guinea Pig Layer {layer_index + 1} Module Hits", \
+                    100, -100, 100, 120, 0, 360)
+    hist.SetTitle(f"Layer {layer_index + 1} Hits per Bunch Crossing;Cosine Theta;Azimuthal Angle (deg)")
 
-#     for z in range(-110, 110, 2):
-#         for azimuthal in range(0, 360, 3):
-#             hits = np.mean(hit_map[r][z][azimuthal])
-#             hist.SetBinContent(((z + 110) // 2) + 1, (azimuthal // 3) + 1, hits)
+    for cos in range(-100, 100, 2):
+        for azimuthal in range(0, 360, 3):
+            hits = np.mean(hit_map[r][cos][azimuthal])
+            hist.SetBinContent(((cos + 100) // 2) + 1, (azimuthal // 3) + 1, hits)
 
-#     hist.SetStats(0)
-#     canvas = ROOT.TCanvas("hit map", f"Layer {layer_index + 1} Hits")
-#     hist.Draw("colz")
-#     canvas.Update()
-#     canvas.SaveAs(f"../plots/hit_rates/higgs/higgs_layer{layer_index + 1}_hit_rate.png")
+    hist.SetStats(0)
+    canvas = ROOT.TCanvas("hit map", f"Layer {layer_index + 1} Hits")
+    hist.Draw("colz")
+    canvas.Update()
+    canvas.SaveAs(f"../plots/hit_rates/higgs/higgs_layer{layer_index + 1}_hit_rate_test.png")
